@@ -24,26 +24,47 @@ exec {'unpack_file_zookeeper.tar.gz':
 	unless => 'test -f /usr/tmp/ent_search/zookeeper/zk1/bin/zkserver.sh',
 	cwd => "${zkf}",
 	command => "tar xvfz zookeeper-3.4.6.tar.gz",
+	before => Exec['rename_zookeeper_zk1'],
 }
 exec { 'rename_zookeeper_zk1':
 	path => "/bin:/sbin:/usr/bin:/usr/sbin",
-	command => "mv ${zkf}/zookeeper-3.4.6 ${zkf}/zk1",
-	creates => "${zkf}/zk1/bin/zkserver",
+	command => "cp ${zkf}/zookeeper-3.4.6 ${zkf}/zk1",
+	creates => "${zkf}/zk1",
+	require => Exec['unpack_file_zookeeper.tar.gz'],
 }
-file { 
-	"${zk1f}/zkdata",
+exec { 'rename_zookeeper_zk2':
+	path => "/bin:/sbin:/usr/bin:/usr/sbin",
+	command => "cp ${zkf}/zookeeper-3.4.6 ${zkf}/zk2",
+	creates => "${zkf}/zk2",
+	require => Exec['unpack_file_zookeeper.tar.gz'],
+}
+exec { 'rename_zookeeper_zk3':
+	path => "/bin:/sbin:/usr/bin:/usr/sbin",
+	command => "cp ${zkf}/zookeeper-3.4.6 ${zkf}/zk3",
+	creates => "${zkf}/zk3",
+	require => Exec['unpack_file_zookeeper.tar.gz'],
+}
+file {[ "${zk1f}/zkdata",
 	"${zk2f}/zkdata",
-	"${zk3f}/zkdata" ] :
+	"${zk3f}/zkdata"]:
 	ensure => directory,
+	require => Exec['rename_zookeeper_zk3'],
 }
+#file {[ "${zk1f}/zkdata",
+#	"${zk2f}/zkdata",
+#	"${zk3f}/zkdata" ] :
+#	ensure => directory,
+#}
 # Build the myid file required for zookeepers
 file { "${zk1f}/zkdata/myid":
 	content => '1',
+	require => Exec['rename_zookeeper_zk1'],
 }
 file { "${zk2f}/zkdata/myid":
 	content => '2',
+	require => Exec['rename_zookeeper_zk2'],
 }
 file { "${zk3f}/zkdata/myid":
 	content => '3',
+	require => Exec['rename_zookeeper_zk3'],
 }
-
