@@ -37,7 +37,8 @@ file { "${zkf}/zookeeper-3.4.6.tar.gz":
 # Use the -C (capital c) with a folder path to output to a specific folder.
 # This needs repeating (for building multiple zookeepers on a single box)
 exec {'unpack_file_zookeeper.tar.gz':
+	path => "/bin:/sbin:/usr/bin:/usr/sbin",
 	unless => 'test -f /usr/tmp/ent_search/zookeeper/zk1/bin/zkserver.sh',
 	cwd => "${zkf}",
-	command => "tar xvfz zookeeper-3.4.6.tar.gz -C zk1"
+	command => "tar xvfz zookeeper-3.4.6.tar.gz -C zk1",
 }
