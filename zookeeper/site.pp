@@ -5,13 +5,32 @@ $zk1f = "${zkf}/zk1"
 $zk2f = "${zkf}/zk2"
 $zk3f = "${zkf}/zk3"
 
-# notify { "Zookeeper folder ${zk3f}": }
-
-file { [ "${esf}",
-	"${zkf}",
-	"${zk1f}",
-	"${zk2f}",
-	"${zk3f}",
+# Create the parent folders
+file {[ "${esf}",
+		"${zkf}"]:
+	ensure => directory,
+}
+# Move the zookeeper-3.4.6.tar.gz to the zk main folder (FOR TESTING maybe used for prod if a download isn't possible.)
+file { "${zkf}/zookeeper-3.4.6.tar.gz":
+	ensure => present,
+	mode => 0666,
+	source => '/etc/puppet/environments/production/manifests/resources/zookeeper-3.4.6.tar.gz',
+	before => Exec['unpack_file_zookeeper.tar.gz'],
+}
+# Use the -C (capital c) with a folder path to output to a specific folder.
+# This needs repeating (for building multiple zookeepers on a single box)
+exec {'unpack_file_zookeeper.tar.gz':
+	path => "/bin:/sbin:/usr/bin:/usr/sbin",
+	unless => 'test -f /usr/tmp/ent_search/zookeeper/zk1/bin/zkserver.sh',
+	cwd => "${zkf}",
+	command => "tar xvfz zookeeper-3.4.6.tar.gz",
+}
+exec { 'rename_zookeeper_zk1':
+	path => "/bin:/sbin:/usr/bin:/usr/sbin",
+	command => "mv ${zkf}/zookeeper-3.4.6 ${zkf}/zk1",
+	creates => "${zkf}/zk1/bin/zkserver",
+}
+file { 
 	"${zk1f}/zkdata",
 	"${zk2f}/zkdata",
 	"${zk3f}/zkdata" ] :
@@ -27,18 +46,4 @@ file { "${zk2f}/zkdata/myid":
 file { "${zk3f}/zkdata/myid":
 	content => '3',
 }
-# Move the zookeeper-3.4.6.tar.gz to the zk main folder (FOR TESTING maybe used for prod if a download isn't possible.)
-file { "${zkf}/zookeeper-3.4.6.tar.gz":
-	ensure => present,
-	mode => 0666,
-	source => '/etc/puppet/environments/production/manifests/resources/zookeeper-3.4.6.tar.gz',
-	before => Exec['unpack_file_zookeeper.tar.gz'],
-}
-# Use the -C (capital c) with a folder path to output to a specific folder.
-# This needs repeating (for building multiple zookeepers on a single box)
-exec {'unpack_file_zookeeper.tar.gz':
-	path => "/bin:/sbin:/usr/bin:/usr/sbin",
-	unless => 'test -f /usr/tmp/ent_search/zookeeper/zk1/bin/zkserver.sh',
-	cwd => "${zkf}",
-	command => "tar xvfz zookeeper-3.4.6.tar.gz -C zk1",
-}
+
