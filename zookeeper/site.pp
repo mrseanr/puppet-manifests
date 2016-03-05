@@ -27,36 +27,56 @@ exec {'unpack_file_zookeeper.tar.gz':
 	unless => 'test -f /usr/tmp/ent_search/zookeeper/zk1/bin/zkserver.sh',
 	cwd => "${zkf}",
 	refreshonly => true,
+	notify => Exec["rename_zookeeper_zk1"],
 }
 /*
+file { "${zkf}/zk1":
+	ensure => directory,
+	source => "${zkf}/zookeeper-3.4.6",
+	recurse => true,
+	owner => "sean",
+	group => "sean",
+	backup => false,
+	subscribe => Exec["unpack_file_zookeeper.tar.gz"],
+}
+*/
 exec { 'rename_zookeeper_zk1':
 	path => "/bin:/sbin:/usr/bin:/usr/sbin",
-	command => "cp ${zkf}/zookeeper-3.4.6 ${zkf}/zk1",
+	command => "cp -r ${zkf}/zookeeper-3.4.6 ${zkf}/zk1",
 	creates => "${zkf}/zk1",
+	refreshonly => true,
+	notify => Exec["rename_zookeeper_zk2"],
 }
 exec { 'rename_zookeeper_zk2':
 	path => "/bin:/sbin:/usr/bin:/usr/sbin",
-	command => "cp ${zkf}/zookeeper-3.4.6 ${zkf}/zk2",
+	command => "cp -r ${zkf}/zookeeper-3.4.6 ${zkf}/zk2",
 	creates => "${zkf}/zk2",
+	refreshonly => true,
+	notify => Exec["rename_zookeeper_zk3"],
 }
 exec { 'rename_zookeeper_zk3':
 	path => "/bin:/sbin:/usr/bin:/usr/sbin",
-	command => "cp ${zkf}/zookeeper-3.4.6 ${zkf}/zk3",
+	command => "cp -r ${zkf}/zookeeper-3.4.6 ${zkf}/zk3",
 	creates => "${zkf}/zk3",
+	refreshonly => true,
 }
 file {[ "${zk1f}/zkdata",
 	"${zk2f}/zkdata",
 	"${zk3f}/zkdata"]:
 	ensure => directory,
+	subscribe => Exec["rename_zookeeper_zk3"],
 }
+
 # Build the myid file required for zookeepers
 file { "${zk1f}/zkdata/myid":
 	content => '1',
+	subscribe => File["${zk1f}/zkdata"],
 }
 file { "${zk2f}/zkdata/myid":
 	content => '2',
+	subscribe => File["${zk1f}/zkdata"],
 }
 file { "${zk3f}/zkdata/myid":
 	content => '3',
+	subscribe => File["${zk1f}/zkdata"],
 }
-*/
